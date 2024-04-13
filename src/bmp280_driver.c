@@ -28,7 +28,7 @@ struct mse_dev
 
 static const struct of_device_id mse_dt_ids[] =
 {
-    { .compatible = "mse,IMD", },
+    { .compatible = "imd,mse_driver", },
     { /* sentinel */ }
 };
 
@@ -36,35 +36,34 @@ MODULE_DEVICE_TABLE(of, mse_dt_ids);
 
 
 /* User is reading data from /dev/msedrvXX */
-static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, loff_t *ppos)
+static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, loff_t *offset)
 {
 	struct mse_dev *mse;
-
+	struct i2c_msg msg[2];
 	static uint8_t in = 0xD0;
 
-    pr_info("mse_read() fue invocada.");
 
-	static struct i2c_msg msg[] = {
-		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in },
-		{ .addr = DEVICE_ADDRESS,
-		  .flags = I2C_M_RD | I2C_M_RECV_LEN,
-		  .len = 1,
-		  .buf = (unsigned char *)&userbuf }
-	};
+
+	msg[0].addr = DEVICE_ADDRESS;
+	msg[0].flags = 0;
+	msg[0].len = 1;
+	msg[0].buf = &in;
+
+	msg[1].addr = DEVICE_ADDRESS;
+	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
+	msg[1].len = 1;
+	msg[1].buf = (unsigned char *)userbuf;
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    /*
-     * Aqui ira las llamadas a i2c_transfer() que correspondan pasando
-     * como dispositivo mse->client
-    */
+    pr_info("mse_read() fue invocada.");
 
 	i2c_transfer(mse->client->adapter, msg, 2);
 
 
 	//pr_info("Read: in: %x, out: %x, len : %x", in, out, nbytes);
 
-    return out;
+    return 0;
 }
 
 static ssize_t mse_write(struct file *file, const char __user *buffer, size_t len, loff_t *offset)
@@ -124,7 +123,7 @@ static const struct file_operations mse_fops =
 };
 
 /*--------------------------------------------------------------------------------*/
-static int mse_probe(struct i2c_client *client)
+static int mse_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
     struct mse_dev *mse;
     static int counter = 0;

@@ -2,6 +2,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #define BMP280_CHIPID (0x58) /**< Default chip ID. */
 
@@ -30,7 +31,9 @@ enum {
   BMP280_REGISTER_TEMPDATA = 0xFA,
 };
 
-int my_dev
+uint8_t bmp280_get_id(void);
+
+int my_dev;
 
 int main(void)
 {
@@ -61,7 +64,7 @@ uint8_t bmp280_get_id(void)
 {
     char buffer[5];
 
-    mse_read(my_dev, buffer, 0, 0);
+    read(my_dev, buffer, 0);
 
     return buffer[0];
 }
