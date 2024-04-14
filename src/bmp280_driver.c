@@ -47,30 +47,18 @@ MODULE_DEVICE_TABLE(of, mse_dt_ids);
 static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, loff_t *offset)
 {
 	struct mse_dev *mse;
-	struct i2c_msg msg[2];
-    unsigned char data[count];
-
-	msg[0].addr = DEVICE_ADDRESS;
-	msg[0].flags = 0;
-	msg[0].len = 1;
-	msg[0].buf = offset;
-
-	msg[1].addr = DEVICE_ADDRESS;
-	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
-	msg[1].len = count;
-	msg[1].buf = data;
+    unsigned char data[5];
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
     pr_info("mse_read() fue invocada.");
 
-	i2c_transfer(mse->client->adapter, msg, 2);
-
-// Copiar los datos leídos al espacio de usuario
+	// Copiar los datos leídos al espacio de usuario
     if (copy_to_user(userbuf, data, count)) {
         // Error al copiar datos al espacio de usuario
         return -EFAULT;
     }
+
 
 
 
@@ -110,30 +98,71 @@ static ssize_t mse_write(struct file *file, const char __user *buffer, size_t le
 
 static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+    long ret;
     struct mse_dev *mse;
 
-    pr_info("my_dev_ioctl() fue invocada. cmd = %d, arg = %ld\n", cmd, arg);    // debug
+    pr_info("mse_ioctl() fue invocada. cmd = %d, arg = %lx\n", cmd, arg);   // debug
+    pr_info("TSL2561 Command Received: len %x; reg %x, val %x",             // debug
+		    __bmp280_args.len, __bmp280_args.reg, __bmp280_args.val);
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
     __bmp280_args.raw = arg;
 
-	// switch (cmd) {
-    //     case 0:             // read
-    //         mse_read(file, );
-    //         break;
+	switch (cmd) {
+        case 0:             // read
+            ret = bmp280_read_reg(mse->client->adapter, __bmp280_args.reg, __bmp280_args.len);
+            break;
     
-    //     case 1:             // write
-    //         mse_write(file, );
-    //         break;
+        // case 1:             // write
+        //     mse_write(file, );
+        //     break;
 
-    //     default:
-    //         break;
-    // }
+        default:
+            break;
+    }
+
+
+    return ret;
+}
+
+static int bmp280_read_reg(i2c_adapter __i2c_adapter, uint8_t reg, uint8_t nbytes)
+{
+    static int out;
+    static struct i2c_msg msg[2];
+    struct mse_dev *mse;
+
+    mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
+
+	msg[0].addr = DEVICE_ADDRESS;
+	msg[0].flags = 0;
+	msg[0].len = 1;
+	msg[0].buf = &reg;
+
+	msg[1].addr = DEVICE_ADDRESS;
+	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
+	msg[1].len = 1;
+	msg[1].buf = (unsigned char *)&out;
+    
+    //i2c_transfer(__i2c_adapter, msg, 2);
+
+    return out;
+}
+
+static int bmp280_write_reg(uint8_t reg, int value, uint8_t nbytes)
+{
+
+	static struct i2c_msg msg[] = {
+		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &reg },
+		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in }
+	};
+	msg[1].len = nbytes;
+
 
 
     return 0;
 }
+
 
 /* declaracion de una estructura del tipo file_operations */
 
