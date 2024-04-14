@@ -42,6 +42,41 @@ static const struct of_device_id mse_dt_ids[] =
 
 MODULE_DEVICE_TABLE(of, mse_dt_ids);
 
+// ---------------------------------------------------------------------------------
+
+static int bmp280_read_reg(struct i2c_adapter * __i2c_adapter, uint8_t reg, uint8_t nbytes)
+{
+    static int out;
+    static struct i2c_msg msg[2];
+
+	msg[0].addr = DEVICE_ADDRESS;
+	msg[0].flags = 0;
+	msg[0].len = 1;
+	msg[0].buf = &reg;
+
+	msg[1].addr = DEVICE_ADDRESS;
+	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
+	msg[1].len = 1;
+	msg[1].buf = (unsigned char *)&out;
+    
+    i2c_transfer(__i2c_adapter, msg, 2);
+
+    return out;
+}
+
+static int bmp280_write_reg(struct i2c_adapter * __i2c_adapter, uint8_t reg, int value, uint8_t nbytes)
+{
+
+	//static struct i2c_msg msg[] = {
+	//	{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &reg },
+	//	{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in }
+	//};
+	//msg[1].len = nbytes;
+
+
+
+    return 0;
+}
 
 /* User is reading data from /dev/msedrvXX */
 static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, loff_t *offset)
@@ -101,13 +136,14 @@ static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
     long ret;
     struct mse_dev *mse;
 
+    __bmp280_args.raw = arg;
+
     pr_info("mse_ioctl() fue invocada. cmd = %d, arg = %lx\n", cmd, arg);   // debug
-    pr_info("TSL2561 Command Received: len %x; reg %x, val %x",             // debug
-		    __bmp280_args.len, __bmp280_args.reg, __bmp280_args.val);
+    pr_info("BMP280 args received: len %x; reg %x, val %x", __bmp280_args.len, __bmp280_args.reg, __bmp280_args.val);
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    __bmp280_args.raw = arg;
+    
 
 	switch (cmd) {
         case 0:             // read
@@ -124,43 +160,6 @@ static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 
     return ret;
-}
-
-static int bmp280_read_reg(i2c_adapter __i2c_adapter, uint8_t reg, uint8_t nbytes)
-{
-    static int out;
-    static struct i2c_msg msg[2];
-    struct mse_dev *mse;
-
-    mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
-
-	msg[0].addr = DEVICE_ADDRESS;
-	msg[0].flags = 0;
-	msg[0].len = 1;
-	msg[0].buf = &reg;
-
-	msg[1].addr = DEVICE_ADDRESS;
-	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
-	msg[1].len = 1;
-	msg[1].buf = (unsigned char *)&out;
-    
-    //i2c_transfer(__i2c_adapter, msg, 2);
-
-    return out;
-}
-
-static int bmp280_write_reg(uint8_t reg, int value, uint8_t nbytes)
-{
-
-	static struct i2c_msg msg[] = {
-		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &reg },
-		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in }
-	};
-	msg[1].len = nbytes;
-
-
-
-    return 0;
 }
 
 

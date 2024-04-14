@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #define BMP280_CHIPID (0x58) /**< Default chip ID. */
+#define ARG_WRAPPER(len, reg, val) ( len | (reg << 8) | (val << 16) )
 
 /* Registers available on the sensor */
 enum {
@@ -86,7 +87,7 @@ int main(void)
 uint8_t bmp280_get_id(void)
 {
 
-    return ioctl(my_dev, 0, 5 | (BMP280_REGISTER_CHIPID << 8) | (23 << 16));
+    return ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_CHIPID, 0));
 }
 
 void bmp280_get_calib(void)
