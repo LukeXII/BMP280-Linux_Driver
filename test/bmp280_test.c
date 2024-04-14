@@ -31,9 +31,30 @@ enum {
   BMP280_REGISTER_TEMPDATA = 0xFA,
 };
 
+/* Struct to hold calibration data */
+typedef struct {
+  uint16_t dig_T1; /**< dig_T1 cal register. */
+  int16_t dig_T2;  /**< dig_T2 cal register. */
+  int16_t dig_T3;  /**< dig_T3 cal register. */
+
+  uint16_t dig_P1; /**< dig_P1 cal register. */
+  int16_t dig_P2;  /**< dig_P2 cal register. */
+  int16_t dig_P3;  /**< dig_P3 cal register. */
+  int16_t dig_P4;  /**< dig_P4 cal register. */
+  int16_t dig_P5;  /**< dig_P5 cal register. */
+  int16_t dig_P6;  /**< dig_P6 cal register. */
+  int16_t dig_P7;  /**< dig_P7 cal register. */
+  int16_t dig_P8;  /**< dig_P8 cal register. */
+  int16_t dig_P9;  /**< dig_P9 cal register. */
+} bmp280_calib_data;
+
 uint8_t bmp280_get_id(void);
+void bmp280_get_calib(void);
+float bmp280_get_temp(void);
+float bmp280_get_pressure(void);
 
 int my_dev;
+static bmp280_calib_data calib_data;
 
 int main(void)
 {
@@ -47,10 +68,12 @@ int main(void)
     {
         printf("Device ID: %X \n", bmp280_get_id());
 
+
         // while(true)
         // {
-        //     bmp280_get_temp();
-        //     bmp280_get_pressure();
+             printf("Temperatura: %f \n", bmp280_get_temp());
+             printf("Presion: %f \n", bmp280_get_pressure());
+             sleep(1);
         // }
 
         //ioctl(my_dev, 100, 110); /* cmd = 100, arg = 110. */
@@ -63,18 +86,25 @@ int main(void)
 uint8_t bmp280_get_id(void)
 {
     char buffer[5];
+    uint8_t reg = 0xD0;
 
-    read(my_dev, buffer, 0);
+    read(my_dev, buffer, 1, &reg);
+    //ioctl(my_dev, 100, 110); /* cmd = 100, arg = 110. */
 
     return buffer[0];
 }
 
-// void bmp280_get_temp()
-// {
+void bmp280_get_calib(void)
+{
     
-// }
+}
 
-// void bmp280_get_pressure()
-// {
+float bmp280_get_temp(void)
+{
+    
+}
 
-// }
+float bmp280_get_pressure(void)
+{
+
+}

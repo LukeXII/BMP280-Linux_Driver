@@ -19,11 +19,19 @@ struct mse_dev
 	char name[9]; /* msedrvXX */
 };
 
+static struct {
+	union {
+		struct {
+			uint8_t len;
+			uint8_t reg;
+			uint8_t val;
+		};
+		unsigned long raw;
+	};
+} __bmp280_args;
+
 /*
- * Definicion de los ID correspondientes al Device Tree. Estos deben ser informados al
- * kernel mediante la macro MODULE_DEVICE_TABLE
- *
- * NOTA: Esta seccion requiere que CONFIG_OF=y en el kernel
+ * Definicion de los ID correspondientes al Device Tree.
  */
 
 static const struct of_device_id mse_dt_ids[] =
@@ -40,25 +48,30 @@ static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, l
 {
 	struct mse_dev *mse;
 	struct i2c_msg msg[2];
-	static uint8_t in = 0xD0;
-
-
+    unsigned char data[count];
 
 	msg[0].addr = DEVICE_ADDRESS;
 	msg[0].flags = 0;
 	msg[0].len = 1;
-	msg[0].buf = &in;
+	msg[0].buf = offset;
 
 	msg[1].addr = DEVICE_ADDRESS;
 	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
-	msg[1].len = 1;
-	msg[1].buf = (unsigned char *)userbuf;
+	msg[1].len = count;
+	msg[1].buf = data;
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
     pr_info("mse_read() fue invocada.");
 
 	i2c_transfer(mse->client->adapter, msg, 2);
+
+// Copiar los datos leídos al espacio de usuario
+    if (copy_to_user(userbuf, data, count)) {
+        // Error al copiar datos al espacio de usuario
+        return -EFAULT;
+    }
+
 
 
 	//pr_info("Read: in: %x, out: %x, len : %x", in, out, nbytes);
@@ -99,14 +112,24 @@ static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
     struct mse_dev *mse;
 
-    pr_info("my_dev_ioctl() fue invocada. cmd = %d, arg = %ld\n", cmd, arg);
+    pr_info("my_dev_ioctl() fue invocada. cmd = %d, arg = %ld\n", cmd, arg);    // debug
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    /*
-     * Aqui ira las llamadas a i2c_transfer() que correspondan pasando
-     * como dispositivo mse->client
-    */
+    __bmp280_args.raw = arg;
+
+	// switch (cmd) {
+    //     case 0:             // read
+    //         mse_read(file, );
+    //         break;
+    
+    //     case 1:             // write
+    //         mse_write(file, );
+    //         break;
+
+    //     default:
+    //         break;
+    // }
 
 
     return 0;
