@@ -85,13 +85,8 @@ int main(void)
 
 uint8_t bmp280_get_id(void)
 {
-    char buffer[5];
-    uint8_t reg = 0xD0;
 
-    read(my_dev, buffer, 1, &reg);
-    //ioctl(my_dev, 100, 110); /* cmd = 100, arg = 110. */
-
-    return buffer[0];
+    return ioctl(my_dev, 0, 5 | (BMP280_REGISTER_CHIPID << 8) | (23 << 16));
 }
 
 void bmp280_get_calib(void)
