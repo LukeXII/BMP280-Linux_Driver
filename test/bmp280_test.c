@@ -57,6 +57,7 @@ void bmp280_get_calib(void);
 float bmp280_get_temp(void);
 float bmp280_get_pressure(void);
 uint8_t bmp280_get_status(void);
+int16_t bmp280_set_calib_reg(int16_t cal_reg);
 
 int my_dev;
 
@@ -72,21 +73,23 @@ int main(void)
     {
         printf("Device ID: %X \n", bmp280_get_id());
 
+        bmp280_get_calib();
+     
+  	printf("Calib: T1: %d, T2: %d, T3: %d \n", _bmp280_calib.dig_T1, _bmp280_calib.dig_T2, _bmp280_calib.dig_T3);
+     	printf("Calib: P1: %d, P2: %d, P3: %d \n", _bmp280_calib.dig_P1, _bmp280_calib.dig_P2, _bmp280_calib.dig_P3);
+     	printf("Calib: P4: %d, P5: %d, P6: %d \n", _bmp280_calib.dig_P4, _bmp280_calib.dig_P5, _bmp280_calib.dig_P6);
+     	printf("Calib: P7: %d, P8: %d, P9: %d \n", _bmp280_calib.dig_P7, _bmp280_calib.dig_P8, _bmp280_calib.dig_P9);
 
-        // while(true)
-        // {
-             
-             bmp280_get_calib();
-             
-             printf("Calib: T1: %d, T2: %d, T3: %d \n", _bmp280_calib.dig_T1, _bmp280_calib.dig_T2, _bmp280_calib.dig_T3);
+         while(1)
+         {
 
-             printf("Temperatura: %f \n", bmp280_get_temp());
-             //printf("Presion: %f \n", bmp280_get_pressure());
+             printf("Temperatura: %.1f °C", bmp280_get_temp());
+             printf("\tPresion: %.1f Pa\n", bmp280_get_pressure());
              
              //printf("Status: %X \n", bmp280_get_status());
              
-             sleep(1);
-        // }
+             sleep(2);
+         }
 
         close(my_dev);
     }
@@ -134,6 +137,29 @@ void bmp280_get_calib(void)
     read(my_dev, &userbuf, 1);
     _bmp280_calib.dig_T3 = (userbuf << 8) | aux;
     
+    _bmp280_calib.dig_P1 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P1);
+    _bmp280_calib.dig_P2 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P2);
+    _bmp280_calib.dig_P3 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P3);
+    _bmp280_calib.dig_P4 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P4);
+    _bmp280_calib.dig_P5 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P5);
+    _bmp280_calib.dig_P6 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P6);
+    _bmp280_calib.dig_P7 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P7);
+    _bmp280_calib.dig_P8 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P8);
+    _bmp280_calib.dig_P9 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P9);
+    
+}
+
+int16_t bmp280_set_calib_reg(int16_t cal_reg)
+{
+    int16_t aux, userbuf;
+    
+    userbuf = cal_reg;
+    read(my_dev, &userbuf, 1);
+    aux = userbuf;
+    userbuf = cal_reg + 1;
+    read(my_dev, &userbuf, 1);
+    
+    return (userbuf << 8) | aux;
 }
 
 float bmp280_get_temp(void)
@@ -170,8 +196,8 @@ float bmp280_get_temp(void)
     //aux2  = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_TEMPDATA + 1, 0));
     //temp = (aux1 << 12) | (aux2 << 4) | (ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_TEMPDATA + 2, 0)) >> 4);
     
-    printf("aux1: %d \n", aux1);	// debug
-    printf("aux2: %d \n", aux2);	// debug
+    //printf("aux1: %d \n", aux1);	// debug
+    //printf("aux2: %d \n", aux2);	// debug
     
     var1 = (((temp >> 3) - ((int32_t)_bmp280_calib.dig_T1 << 1)) * ((int32_t)_bmp280_calib.dig_T2)) >> 11;
     var2 = (((((temp >> 4) - ((int32_t)_bmp280_calib.dig_T1)) * ((temp >> 4) - ((int32_t)_bmp280_calib.dig_T1))) >> 12) * ((int32_t)_bmp280_calib.dig_T3)) >> 14;
@@ -185,5 +211,39 @@ float bmp280_get_temp(void)
 
 float bmp280_get_pressure(void)
 {
+    uint32_t userbuf[2];
+    uint32_t aux1, aux2, aux3;
+    int64_t var1, var2, pressure;
+    
+    userbuf[0] = BMP280_REGISTER_PRESSUREDATA;
+    read(my_dev, &userbuf, 1);
+    aux1 = userbuf[0];
+    
+    userbuf[0] = BMP280_REGISTER_PRESSUREDATA + 1;
+    read(my_dev, &userbuf, 1);
+    aux2 = userbuf[0];
+    
+    userbuf[0] = BMP280_REGISTER_PRESSUREDATA + 2;
+    read(my_dev, &userbuf, 1);
+    aux3 = userbuf[0];
 
+    pressure = (aux1 << 12) | (aux2 << 4) | (aux3 >> 4);
+    
+    var1 = ((int64_t)t_fine) - 128000;
+    var2 = var1 * var1 * (int64_t)_bmp280_calib.dig_P6;
+    var2 = var2 + ((var1 * (int64_t)_bmp280_calib.dig_P5) << 17);
+    var2 = var2 + (((int64_t)_bmp280_calib.dig_P4) << 35);
+    var1 = ((var1 * var1 * (int64_t)_bmp280_calib.dig_P3) >> 8) + ((var1 * (int64_t)_bmp280_calib.dig_P2) << 12);
+    var1 = (((((int64_t)1) << 47) + var1)) * ((int64_t)_bmp280_calib.dig_P1) >> 33;
+    
+    pressure = 1048576 - pressure;
+    pressure = (((pressure << 31) - var2) * 3125) / var1;
+    
+    var1 = (((int64_t)_bmp280_calib.dig_P9) * (pressure >> 13) * (pressure >> 13)) >> 25;
+    var2 = (((int64_t)_bmp280_calib.dig_P8) * pressure) >> 19;
+
+    pressure = ((pressure + var1 + var2) >> 8) + (((int64_t)_bmp280_calib.dig_P7) << 4);
+    
+    return (float)pressure / 256;
+    
 }
