@@ -99,43 +99,25 @@ int main(void)
 
 uint8_t bmp280_get_status(void)
 {
-
     return ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_STATUS, 0));
 }
 
 uint8_t bmp280_get_id(void)
 {
-	uint8_t userbuf = BMP280_REGISTER_CHIPID;
+    uint8_t userbuf = BMP280_REGISTER_CHIPID;
 
-	read(my_dev, &userbuf, 1);
-	
-	return userbuf;
+    read(my_dev, &userbuf, 1);
+
+    return userbuf;
 }
 
 void bmp280_get_calib(void)
 {
     int16_t aux, userbuf;
-    
-    userbuf = BMP280_REGISTER_DIG_T1;
-    read(my_dev, &userbuf, 1);
-    aux = userbuf;
-    userbuf = BMP280_REGISTER_DIG_T1 + 1;
-    read(my_dev, &userbuf, 1);
-    _bmp280_calib.dig_T1 = (userbuf << 8) | aux;
-    
-    userbuf = BMP280_REGISTER_DIG_T2;
-    read(my_dev, &userbuf, 1);
-    aux = userbuf;
-    userbuf = BMP280_REGISTER_DIG_T2 + 1;
-    read(my_dev, &userbuf, 1);
-    _bmp280_calib.dig_T2 = (userbuf << 8) | aux;
-    
-    userbuf = BMP280_REGISTER_DIG_T3;
-    read(my_dev, &userbuf, 1);
-    aux = userbuf;
-    userbuf = BMP280_REGISTER_DIG_T3 + 1;
-    read(my_dev, &userbuf, 1);
-    _bmp280_calib.dig_T3 = (userbuf << 8) | aux;
+
+    _bmp280_calib.dig_T1 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_T1);
+    _bmp280_calib.dig_T2 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_T2);
+    _bmp280_calib.dig_T3 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_T3);
     
     _bmp280_calib.dig_P1 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P1);
     _bmp280_calib.dig_P2 = bmp280_set_calib_reg(BMP280_REGISTER_DIG_P2);
