@@ -89,8 +89,8 @@ static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, l
 {
 	struct mse_dev *mse;
     	static struct i2c_msg msg[2];
-    	static char out;
-    	unsigned char reg;
+    	static int out;
+    	uint8_t reg;
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
@@ -123,8 +123,8 @@ static ssize_t mse_write(struct file *file, const char __user *userbuf, size_t l
 {
     struct mse_dev *mse;
 
-	unsigned char reg;
-	unsigned char data;
+	uint8_t reg;
+	uint8_t data;
 
     if (copy_from_user(&reg, userbuf, 1)) {
         return -EFAULT;
