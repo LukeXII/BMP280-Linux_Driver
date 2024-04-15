@@ -90,18 +90,18 @@ static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, l
 	struct mse_dev *mse;
     	static struct i2c_msg msg[2];
     	static char out;
-    	unsigned char in;
+    	unsigned char reg;
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    if (copy_from_user(&in, userbuf, 1)) {
+    if (copy_from_user(&reg, userbuf, 1)) {
         return -EFAULT;
     }
 
 	msg[0].addr = DEVICE_ADDRESS;
 	msg[0].flags = 0;
 	msg[0].len = 1;
-	msg[0].buf = &in;
+	msg[0].buf = &reg;
 
 	msg[1].addr = DEVICE_ADDRESS;
 	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
@@ -119,31 +119,27 @@ static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, l
     return count;
 }
 
-static ssize_t mse_write(struct file *file, const char __user *buffer, size_t len, loff_t *offset)
+static ssize_t mse_write(struct file *file, const char __user *userbuf, size_t len, loff_t *offset)
 {
     struct mse_dev *mse;
 
-	static uint8_t in;
-	static uint8_t regcpy;
+	unsigned char reg;
+	unsigned char data;
 
-	static struct i2c_msg msg[] = {
-		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &regcpy },
-		{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in }
-	};
-
-    pr_info("mse_write() fue invocada.");
+    if (copy_from_user(&reg, userbuf, 1)) {
+        return -EFAULT;
+    }
+    
+    if (copy_from_user(&data, userbuf + 1, 1)) {
+        return -EFAULT;
+    }
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    /*
-     * Aqui ira las llamadas a i2c_transfer() que correspondan pasando
-     * como dispositivo mse->client
-	*/
+	i2c_smbus_write_byte_data(mse->client, reg, data);
 
-	i2c_transfer(mse->client->adapter, msg, 2);
+	//i2c_transfer(mse->client->adapter, msg, 2);
 
-
-	//pr_info("Write: in: %x", in);
 
     return 0;
 }

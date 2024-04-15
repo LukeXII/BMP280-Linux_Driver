@@ -76,9 +76,9 @@ int main(void)
         // while(true)
         // {
              
-             //bmp280_get_calib();
+             bmp280_get_calib();
              
-             //printf("Calib: T1: %d, T2: %d, T3: %d \n", _bmp280_calib.dig_T1, _bmp280_calib.dig_T2, _bmp280_calib.dig_T3);
+             printf("Calib: T1: %d, T2: %d, T3: %d \n", _bmp280_calib.dig_T1, _bmp280_calib.dig_T2, _bmp280_calib.dig_T3);
 
              //printf("Temperatura: %f \n", bmp280_get_temp());
              //printf("Presion: %f \n", bmp280_get_pressure());
@@ -111,14 +111,29 @@ uint8_t bmp280_get_id(void)
 
 void bmp280_get_calib(void)
 {
-    uint8_t aux;
+    int16_t aux, userbuf;
     
-    aux = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T1, 0));
-    _bmp280_calib.dig_T1 = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T1 + 1, 0)) << 8 | aux;
-    aux = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T2, 0));
-    _bmp280_calib.dig_T2 = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T2 + 1, 0)) << 8 | aux;
-    aux = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T3, 0));
-    _bmp280_calib.dig_T3 = ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_DIG_T3 + 1, 0)) << 8 | aux;
+    userbuf = BMP280_REGISTER_DIG_T1;
+    read(my_dev, &userbuf, 1);
+    aux = userbuf;
+    userbuf = BMP280_REGISTER_DIG_T1 + 1;
+    read(my_dev, &userbuf, 1);
+    _bmp280_calib.dig_T1 = (userbuf << 8) | aux;
+    
+    userbuf = BMP280_REGISTER_DIG_T2;
+    read(my_dev, &userbuf, 1);
+    aux = userbuf;
+    userbuf = BMP280_REGISTER_DIG_T2 + 1;
+    read(my_dev, &userbuf, 1);
+    _bmp280_calib.dig_T2 = (userbuf << 8) | aux;
+    
+    userbuf = BMP280_REGISTER_DIG_T3;
+    read(my_dev, &userbuf, 1);
+    aux = userbuf;
+    userbuf = BMP280_REGISTER_DIG_T3 + 1;
+    read(my_dev, &userbuf, 1);
+    _bmp280_calib.dig_T3 = (userbuf << 8) | aux;
+    
 }
 
 float bmp280_get_temp(void)
