@@ -64,16 +64,22 @@ static int bmp280_read_reg(struct i2c_adapter * __i2c_adapter, uint8_t reg, uint
     return out;
 }
 
-static int bmp280_write_reg(struct i2c_adapter * __i2c_adapter, uint8_t reg, int value, uint8_t nbytes)
+static int bmp280_write_reg(struct i2c_client * __i2c_client, uint8_t reg, int value, uint8_t nbytes)
 {
+	//static struct i2c_msg msg[2];
+	
+	//msg[0].addr = DEVICE_ADDRESS;
+	//msg[0].flags = 0;
+	//msg[0].len = 1;
+	//msg[0].buf = &reg;
+	
+	//msg[1].addr = DEVICE_ADDRESS;
+	//msg[1].flags = 0;
+	//msg[1].len = 1;
+	//msg[1].buf = (unsigned char *)&value;
 
-	//static struct i2c_msg msg[] = {
-	//	{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &reg },
-	//	{ .addr = DEVICE_ADDRESS, .flags = 0, .len = 1, .buf = &in }
-	//};
-	//msg[1].len = nbytes;
-
-
+	i2c_smbus_write_byte_data(__i2c_client, reg, value);
+	//i2c_transfer(__i2c_adapter, msg, 2);
 
     return 0;
 }
@@ -133,12 +139,12 @@ static ssize_t mse_write(struct file *file, const char __user *buffer, size_t le
 
 static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
-    long ret;
+    long ret = 0;
     struct mse_dev *mse;
 
     __bmp280_args.raw = arg;
 
-    pr_info("mse_ioctl() fue invocada. cmd = %d, arg = %lx\n", cmd, arg);   // debug
+    //pr_info("mse_ioctl() fue invocada. cmd = %d, arg = %lx\n", cmd, arg);   // debug
     pr_info("BMP280 args received: len %x; reg %x, val %x", __bmp280_args.len, __bmp280_args.reg, __bmp280_args.val);
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
@@ -150,9 +156,9 @@ static long mse_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
             ret = bmp280_read_reg(mse->client->adapter, __bmp280_args.reg, __bmp280_args.len);
             break;
     
-        // case 1:             // write
-        //     mse_write(file, );
-        //     break;
+        case 1:             // write
+            bmp280_write_reg(mse->client, __bmp280_args.reg, __bmp280_args.val, __bmp280_args.len);
+            break;
 
         default:
             break;
