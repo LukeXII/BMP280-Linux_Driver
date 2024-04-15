@@ -76,11 +76,11 @@ int main(void)
         // while(true)
         // {
              
-             bmp280_get_calib();
+             //bmp280_get_calib();
              
              //printf("Calib: T1: %d, T2: %d, T3: %d \n", _bmp280_calib.dig_T1, _bmp280_calib.dig_T2, _bmp280_calib.dig_T3);
 
-             printf("Temperatura: %f \n", bmp280_get_temp());
+             //printf("Temperatura: %f \n", bmp280_get_temp());
              //printf("Presion: %f \n", bmp280_get_pressure());
              
              //printf("Status: %X \n", bmp280_get_status());
@@ -102,8 +102,11 @@ uint8_t bmp280_get_status(void)
 
 uint8_t bmp280_get_id(void)
 {
+	uint8_t userbuf = BMP280_REGISTER_CHIPID;
 
-    return ioctl(my_dev, 0, ARG_WRAPPER(1, BMP280_REGISTER_CHIPID, 0));
+	read(my_dev, &userbuf, 1);
+	
+	return userbuf;
 }
 
 void bmp280_get_calib(void)

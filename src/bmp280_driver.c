@@ -88,24 +88,35 @@ static int bmp280_write_reg(struct i2c_client * __i2c_client, uint8_t reg, int v
 static ssize_t mse_read(struct file *file, char __user *userbuf, size_t count, loff_t *offset)
 {
 	struct mse_dev *mse;
-    unsigned char data[5];
+    	static struct i2c_msg msg[2];
+    	static char out;
+    	unsigned char in;
 
     mse = container_of(file->private_data, struct mse_dev, mse_miscdevice);
 
-    pr_info("mse_read() fue invocada.");
+    if (copy_from_user(&in, userbuf, 1)) {
+        return -EFAULT;
+    }
+
+	msg[0].addr = DEVICE_ADDRESS;
+	msg[0].flags = 0;
+	msg[0].len = 1;
+	msg[0].buf = &in;
+
+	msg[1].addr = DEVICE_ADDRESS;
+	msg[1].flags = I2C_M_RD | I2C_M_RECV_LEN;
+	msg[1].len = 1;
+	msg[1].buf = (unsigned char *)&out;
+
+    i2c_transfer(mse->client->adapter, msg, 2);
 
 	// Copiar los datos leídos al espacio de usuario
-    if (copy_to_user(userbuf, data, count)) {
+    if (copy_to_user(userbuf, &out, count)) {
         // Error al copiar datos al espacio de usuario
         return -EFAULT;
     }
 
-
-
-
-	//pr_info("Read: in: %x, out: %x, len : %x", in, out, nbytes);
-
-    return 0;
+    return count;
 }
 
 static ssize_t mse_write(struct file *file, const char __user *buffer, size_t len, loff_t *offset)
