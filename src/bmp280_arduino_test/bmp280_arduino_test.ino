@@ -35,8 +35,8 @@ void setup() {
   unsigned status;
   Wire.setSDA(PB9);
   Wire.setSCL(PB8);
-  //status = bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
-  status = bmp.begin();
+  status = bmp.begin(BMP280_ADDRESS_ALT, BMP280_CHIPID);
+  //status = bmp.begin();
   if (!status) {
     Serial.println(F("Could not find a valid BMP280 sensor, check wiring or "
                       "try a different address!"));
@@ -45,7 +45,7 @@ void setup() {
     Serial.print("   ID of 0x56-0x58 represents a BMP 280,\n");
     Serial.print("        ID of 0x60 represents a BME 280.\n");
     Serial.print("        ID of 0x61 represents a BME 680.\n");
-    while (1) delay(10);
+    //while (1) delay(10);
   }
 
   /* Default settings from datasheet. */
